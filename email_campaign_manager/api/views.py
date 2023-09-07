@@ -6,9 +6,7 @@ class Subscribers:
 
     def update_subscriber(request, subscriber_id):
         try:
-
             if request.method == 'PUT':
-
                 subscriber = Subscriber.objects.get(
                     subscriber_id=subscriber_id)
 

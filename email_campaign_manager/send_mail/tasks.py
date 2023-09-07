@@ -7,7 +7,6 @@ from django.http import HttpResponse
 def send_email_task(subject, message, from_email, recipient):
     try:
         send_mail(subject, message, from_email, recipient)
-        print(recipient)
         return f'Mail sent successfully to {recipient}'
     except Exception as error:
-        return f'Error: {str(error)}'
+        return f'Mail un-successful to {recipient}. Error: {str(error)}'

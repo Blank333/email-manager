@@ -4,5 +4,4 @@ from .views import Subscribers
 urlpatterns = [
     path('subscribers/<int:subscriber_id>',
          Subscribers.update_subscriber, name='update_subscriber'),
-
 ]
