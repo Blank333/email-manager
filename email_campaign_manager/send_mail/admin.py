@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import EmailRequest, EmailRequestItem
 
-# Register your models here.
+admin.site.register(EmailRequest)
+admin.site.register(EmailRequestItem)
