@@ -1,7 +1,8 @@
+import os
 from celery import shared_task
 from django.core.mail import send_mail
 from .models import EmailRequestItem
-import os
+from .exceptions import SuccessException
 
 
 @shared_task
@@ -13,7 +14,7 @@ def send_email_task(email_request_item_id):
         email_id = email_request_item.subscriber_id.email
 
         if email_request_item.status == 'SUCCESS':
-            raise Exception(f'Campaign already Sent to user')
+            raise SuccessException(f'Campaign already Sent to user')
 
         print(email_id)
 
@@ -30,10 +31,11 @@ def send_email_task(email_request_item_id):
         email_request_item.save()
 
         return f'Mail sent successfully to {email_id}'
+
+    except SuccessException as error:
+        return f'Error: {str(error)} \nMail un-successful to {email_id}.'
+
     except Exception as error:
-
-        # Write a custom exception
-        # email_request_item.status = 'FAILED'
-        # email_request_item.save()
-
-        return f'Mail un-successful to {email_id}. Error: {str(error)}'
+        email_request_item.status = 'FAILED'
+        email_request_item.save()
+        return f'Error: {str(error)} \nMail un-successful to {email_id}.'
