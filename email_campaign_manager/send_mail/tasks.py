@@ -33,9 +33,9 @@ def send_email_task(email_request_item_id):
         return f'Mail sent successfully to {email_id}'
 
     except SuccessException as error:
-        return f'Error: {str(error)} \nMail un-successful to {email_id}.'
+        return f'Error: {str(error)}. Mail un-successful to {email_id}.'
 
     except Exception as error:
         email_request_item.status = 'FAILED'
         email_request_item.save()
-        return f'Error: {str(error)} \nMail un-successful to {email_id}.'
+        return f'Error: {str(error)}. Mail un-successful to {email_id}.'

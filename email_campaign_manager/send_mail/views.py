@@ -12,15 +12,15 @@ def is_admin(user):
 
 
 @user_passes_test(is_admin, login_url='http://127.0.0.1:8000/admin/')
-def email(request, campaign_id):
+def resend_email(request, email_request_id):
     try:
         if request.method == 'POST':
-            campaign = get_object_or_404(Campaign, pk=campaign_id)
 
-            # Filter only the subscribed users
-            active_subscribers = Subscriber.objects.filter(is_active=True)
+            email_request = get_object_or_404(
+                EmailRequest, pk=email_request_id)
 
-            email_request = create_email_req(campaign, active_subscribers)
+            create_email_req_items(
+                email_request, resend=True)
 
             # Celery tasks to send emails concurrently
             tasks = [send_email_task.s(email_request_item.email_request_item_id)
@@ -35,18 +35,39 @@ def email(request, campaign_id):
         return HttpResponse(error, status=500)
 
 
-def create_email_req(campaign, active_subscribers):
+@user_passes_test(is_admin, login_url='http://127.0.0.1:8000/admin/')
+def send_email(request, campaign_id):
     try:
-        email_request = EmailRequest.objects.filter(
-            campaign_id=campaign).first()
-        if not email_request:
-            email_request = EmailRequest.objects.create(
-                campaign_id=campaign)
+        if request.method == 'POST':
+            campaign = get_object_or_404(Campaign, pk=campaign_id)
 
+            email_request = EmailRequest.objects.create(campaign_id=campaign)
+            create_email_req_items(email_request)
+
+            # Celery tasks to send emails concurrently
+            tasks = [send_email_task.s(email_request_item.email_request_item_id)
+                     for email_request_item in email_request.emailrequestitem_set.all()]
+
+            group(tasks)()
+
+            return HttpResponse('Sending email campaign to Subscribers', status=200)
+        else:
+            return HttpResponse('Only available for POST requests', status=405)
+    except Exception as error:
+        return HttpResponse(error, status=500)
+
+
+def create_email_req_items(email_request, resend=False):
+    try:
+
+        active_subscribers = Subscriber.objects.filter(is_active=True)
         # Create request items for each subscriber
         email_request_items = []
         for subscriber in active_subscribers:
-            if (EmailRequestItem.objects.filter(email_request_id=email_request, subscriber_id=subscriber).first()):
+            email_request_item = EmailRequestItem.objects.filter(
+                email_request_id=email_request, subscriber_id=subscriber).first()
+
+            if (email_request_item and resend):
                 continue
 
             email_request_items.append(EmailRequestItem(
