@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'send_mail',
+    'celery',
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [
