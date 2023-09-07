@@ -4,6 +4,8 @@ import os
 from api.models import Campaign, Subscriber
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import user_passes_test
+from .tasks import send_email_task
+from celery import group
 
 
 def is_admin(user):
@@ -29,12 +31,12 @@ def email(request, campaign_id):
                 subscriber.email for subscriber in active_subscribers
             ]
 
-            # Implement parallel emails
+            # Celery tasks to send emails concurrently
+            tasks = [send_email_task.s(subject, message, from_email, [
+                                       recipient]) for recipient in recipient_list]
+            group(tasks)()
 
-            # print(recipient_list)
-            # send_mail(subject, message, from_email, recipient_list)
-
-            return HttpResponse("Mail sent successfully", status=200)
+            return HttpResponse('Sending email campaign to Subscribers', status=200)
         else:
             return HttpResponse('Only available for POST requests', status=405)
     except Exception as error:

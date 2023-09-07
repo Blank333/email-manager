@@ -16,7 +16,7 @@ class Subscribers:
                 subscriber.is_active = False
                 subscriber.save()
 
-                return HttpResponse('Subscriber updated successfully', status=200)
+                return HttpResponse(f'Subscriber {subscriber.email} updated successfully', status=200)
             else:
                 return HttpResponse('Only available for PUT requests', status=405)
         except Subscriber.DoesNotExist as error:
