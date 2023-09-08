@@ -1,0 +1,51 @@
+services:
+  # Django web application
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/usr/src/app/
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    entrypoint:
+      - /usr/src/app/entrypoint.sh
+
+  # PostgreSQL database
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=supuser
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=campaign
+
+  # Redis server
+  redis:
+    image: redis
+
+  # Celery worker
+  worker:
+    build: .
+    command: celery -A email_campaign_manager worker -l info
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+
+  # Celery beat scheduler
+  beat:
+    build: .
+    command: celery -A email_campaign_manager beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  postgres_data:
