@@ -8,7 +8,6 @@ from .exceptions import SuccessException
 @shared_task
 def send_email_task(email_request_item_id):
     try:
-
         email_request_item = EmailRequestItem.objects.get(
             email_request_item_id=email_request_item_id)
         email_id = email_request_item.subscriber_id.email
@@ -16,16 +15,17 @@ def send_email_task(email_request_item_id):
         if email_request_item.status == 'SUCCESS':
             raise SuccessException(f'Campaign already Sent to user')
 
-        print(email_id)
+        campaign = email_request_item.email_request_id.campaign_id
 
-        subject = email_request_item.email_request_id.campaign_id.subject
-
-        # Email body template?
-        message = f'{email_request_item.email_request_id.campaign_id.plain_text_content} \
-                    \n\nPublished at: {email_request_item.email_request_id.campaign_id.published_date} by {email_request_item.email_request_id.campaign_id.article_url}'
+        subject = campaign.subject
         from_email = os.environ.get('EMAIL_EMAIL')
 
-        # send_mail(subject, message, from_email, recipient)
+        # Email base template
+        message = f'{campaign.plain_text_content} \
+                    \n\nPublished at: {campaign.published_date} by {campaign.article_url}'
+
+        # Send mail using configured SMTP
+        send_mail(subject, message, from_email, [email_id])
 
         email_request_item.status = 'SUCCESS'
         email_request_item.save()

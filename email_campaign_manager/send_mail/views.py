@@ -22,11 +22,15 @@ def resend_email(request, email_request_id):
             create_email_req_items(
                 email_request, resend=True)
 
-            # Celery tasks to send emails concurrently
-            tasks = [send_email_task.s(email_request_item.email_request_item_id)
-                     for email_request_item in email_request.emailrequestitem_set.all()]
+            # Create batches to handle load
+            email_request_items = email_request.emailrequestitem_set.all()
+            batches = create_batches(email_request_items)
 
-            group(tasks)()
+            # Celery tasks to send emails concurrently
+            for batch in batches:
+                tasks = [send_email_task.s(email_request_item.email_request_item_id)
+                         for email_request_item in batch]
+                group(tasks)()
 
             return HttpResponse('Sending email campaign to Subscribers', status=200)
         else:
@@ -44,17 +48,25 @@ def send_email(request, campaign_id):
             email_request = EmailRequest.objects.create(campaign_id=campaign)
             create_email_req_items(email_request)
 
-            # Celery tasks to send emails concurrently
-            tasks = [send_email_task.s(email_request_item.email_request_item_id)
-                     for email_request_item in email_request.emailrequestitem_set.all()]
+            # Create batches to handle load
+            email_request_items = email_request.emailrequestitem_set.all()
+            batches = create_batches(email_request_items)
 
-            group(tasks)()
+            # Celery tasks to send emails concurrently
+            for batch in batches:
+                tasks = [send_email_task.s(email_request_item.email_request_item_id)
+                         for email_request_item in batch]
+                group(tasks)()
 
             return HttpResponse('Sending email campaign to Subscribers', status=200)
         else:
             return HttpResponse('Only available for POST requests', status=405)
     except Exception as error:
         return HttpResponse(error, status=500)
+
+
+def create_batches(email_request_items, size=10):
+    return [email_request_items[i:i + size] for i in range(0, len(email_request_items), size)]
 
 
 def create_email_req_items(email_request, resend=False):

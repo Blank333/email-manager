@@ -9,7 +9,7 @@ class EmailRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.campaign_id.subject
+        return str(self.email_request_id)
 
 
 class EmailRequestItem(models.Model):
@@ -23,4 +23,4 @@ class EmailRequestItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.subscriber_id.email
+        return str(self.email_request_item_id)

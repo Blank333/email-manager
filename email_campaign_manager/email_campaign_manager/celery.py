@@ -13,6 +13,9 @@ app = Celery('email_campaign_manager')
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
+# Change this to handle number of threads
+app.conf.worker_concurrency = 10
+
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
 
