@@ -4,7 +4,7 @@ from .models import Subscriber
 
 class Subscribers:
 
-    def update_subscriber(request, subscriber_id):
+    def unsubscribe(request, subscriber_id):
         try:
             if request.method == 'PUT':
                 subscriber = Subscriber.objects.get(
