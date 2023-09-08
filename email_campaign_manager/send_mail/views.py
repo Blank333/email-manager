@@ -28,7 +28,7 @@ def resend_email(request, email_request_id):
 
             # Celery tasks to send emails concurrently
             for batch in batches:
-                tasks = [send_email_task.s(email_request_item.email_request_item_id)
+                tasks = [send_email_task.s(email_request_item.email_request_item_id, resend=True)
                          for email_request_item in batch]
                 group(tasks)()
 

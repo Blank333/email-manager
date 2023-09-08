@@ -6,14 +6,18 @@ from .exceptions import SuccessException
 
 
 @shared_task
-def send_email_task(email_request_item_id):
+def send_email_task(email_request_item_id, resend=False):
     try:
         email_request_item = EmailRequestItem.objects.get(
             email_request_item_id=email_request_item_id)
-        email_id = email_request_item.subscriber_id.email
+        subscriber = email_request_item.subscriber_id
+        email_id = subscriber.email
 
         if email_request_item.status == 'SUCCESS':
             raise SuccessException(f'Campaign already Sent to user')
+
+        if email_request_item.status == 'IN_PROGRESS' and resend:
+            raise SuccessException(f'Campaign already in progress to user')
 
         campaign = email_request_item.email_request_id.campaign_id
 
@@ -21,7 +25,7 @@ def send_email_task(email_request_item_id):
         from_email = os.environ.get('EMAIL_EMAIL')
 
         # Email base template
-        message = f'{campaign.plain_text_content} \
+        message = f'{campaign.plain_text_content.replace("$username", subscriber.first_name)} \
                     \n\nPublished at: {campaign.published_date} by {campaign.article_url}'
 
         # Send mail using configured SMTP
